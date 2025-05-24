@@ -1,0 +1,9 @@
+<div>
+  @for (message of messages(); track message) {
+  <div>{{ message }}</div>
+  }
+  <input [(ngModel)]="messageContent" placeholder="Type a message..." />
+  <input [(ngModel)]="userId" placeholder="User ID (for one-to-one)" />
+  <input [(ngModel)]="groupName" placeholder="Group Name (for group chat)" />
+  <button (click)="sendMessage()">Send</button>
+</div>
