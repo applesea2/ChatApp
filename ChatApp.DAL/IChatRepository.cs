@@ -9,8 +9,7 @@ namespace ChatApp.DAL
 {
     public interface IChatRepository
     {
-        Task<IEnumerable<ChatMessage>> GetMessagesForUser(string userId);
+        Task<IEnumerable<ChatMessage>> GetMessagesForUserAsync(string userId);
         Task AddMessage(ChatMessage message);
-        Task SaveChangesAsync();
     }
 }

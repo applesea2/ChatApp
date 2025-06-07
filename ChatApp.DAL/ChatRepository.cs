@@ -12,7 +12,7 @@ namespace ChatApp.DAL
             _context = context;
         }
 
-        public async Task<IEnumerable<ChatMessage>> GetMessagesForUser(string userId)
+        public async Task<IEnumerable<ChatMessage>> GetMessagesForUserAsync(string userId)
         {
             return await _context.ChatMessages
                 .Where(m => m.ReceiverId == userId || m.SenderId == userId)
@@ -22,10 +22,6 @@ namespace ChatApp.DAL
         public async Task AddMessage(ChatMessage message)
         {
             await _context.ChatMessages.AddAsync(message);
-        }
-
-        public async Task SaveChangesAsync()
-        {
             await _context.SaveChangesAsync();
         }
     }
