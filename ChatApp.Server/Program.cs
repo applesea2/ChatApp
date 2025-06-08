@@ -38,6 +38,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSignalR();
+
 builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
 builder.Services.AddDbContext<ChatDbContext>(options =>
@@ -64,19 +65,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-    endpoints.MapHub<ChatHub>("/chathub");
-});
-app.UseRouting();
-// Use the CORS policy
-
-
 app.UseDefaultFiles();
 app.MapStaticAssets();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -87,6 +78,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chathub");
 
 app.MapFallbackToFile("/index.html");
 

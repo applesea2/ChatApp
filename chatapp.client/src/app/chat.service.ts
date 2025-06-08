@@ -5,46 +5,58 @@ import * as signalR from '@microsoft/signalr';
   providedIn: 'root'
 })
 export class ChatService {
-  private hubConnection: signalR.HubConnection;
-  private connectionPromise: Promise<void>;
+  private hubConnection: signalR.HubConnection | null = null;
   public messages = signal<string[]>([]);
 
-  constructor() {
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7219/chathub') // Make sure this matches your server endpoint
-      .configureLogging(signalR.LogLevel.Information)
-      .build();
+  constructor() { }
 
-    this.connectionPromise = this.hubConnection.start()
-      .catch(err => {
-        console.error('SignalR connection error:', err.toString());
-      });
+  public async connect(): Promise<void> {
+    const token = localStorage.getItem('jwtToken');
 
-    this.hubConnection.on('ReceiveMessage', (message: string) => {
-      this.messages.update((currentMessages: any) => {
-        currentMessages.push(message);
-        return currentMessages;
-      });
-    });
-  }
-
-  public async sendMessage(message: string, userId?: string, groupName?: string) {
-    await this.connectionPromise; // Ensure connection is established
-
-    if (this.hubConnection.state !== signalR.HubConnectionState.Connected) {
-      console.error("SignalR connection is not in a connected state.");
+    if (!token) {
+      console.error('No JWT token found, cannot connect to SignalR hub.');
       return;
     }
 
-    if (userId) {
-      this.hubConnection.invoke('SendPrivateMessage', userId, message)
-        .catch(err => console.error(err));
-    } else if (groupName) {
-      this.hubConnection.invoke('SendGroupMessage', groupName, message)
-        .catch(err => console.error(err));
-    } else {
-      this.hubConnection.invoke('SendBroadcastMessage', message)
-        .catch(err => console.error(err));
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl('https://localhost:7219/chathub', {
+        accessTokenFactory: () => token
+      })
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    this.hubConnection.on('ReceiveMessage', (message: string) => {
+      this.messages.update((current) => [...current, message]);
+    });
+
+    try {
+      await this.hubConnection.start();
+      console.log('SignalR connected');
+    } catch (err) {
+      console.error('SignalR connection error:', err);
     }
+  }
+
+  public async sendMessage(message: string, userId?: string, groupName?: string) {
+    if (!this.hubConnection || this.hubConnection.state !== signalR.HubConnectionState.Connected) {
+      console.error('SignalR connection not established');
+      return;
+    }
+
+    try {
+      if (userId) {
+        await this.hubConnection.invoke('SendPrivateMessage', userId, message);
+      } else if (groupName) {
+        await this.hubConnection.invoke('SendMessageToGroup', groupName, message);
+      } else {
+        await this.hubConnection.invoke('SendBroadCastMessage', message);
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+    }
+  }
+
+  public disconnect(): void {
+    this.hubConnection?.stop().catch(err => console.error('Error disconnecting SignalR:', err));
   }
 }
